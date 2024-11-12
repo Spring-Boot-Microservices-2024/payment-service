@@ -59,6 +59,14 @@ protobuf {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs = ["/src/generated/main/java", "src/main/java", "/src/generated/main/grpc"]
+        }
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

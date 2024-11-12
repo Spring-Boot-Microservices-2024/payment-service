@@ -18,12 +18,16 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
                 request.getUserId(), request.getEventId(), request.getPrice());
 
         // Simulate processing the payment
-        boolean paymentSuccess = processPaymentLogic(request);  // You would call some logic to process the payment
+        boolean paymentSuccess = processPaymentLogic(request);
+
+        if (!paymentSuccess) {
+            throw new PaymentException("Payment failed");
+        }
 
         // Build the response
         PaymentResponse response = PaymentResponse.newBuilder()
-                .setSuccess(paymentSuccess)
-                .setMessage(paymentSuccess ? "Payment successful!" : "Payment failed!")
+                .setSuccess(true)
+                .setMessage("Payment successful!")
                 .build();
 
         // Send the response
@@ -32,12 +36,11 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
         responseObserver.onCompleted();
     }
 
-    // Bidirectional streaming RPC method to handle payment updates and cancellations
+
     @Override
     public StreamObserver<PaymentReturnRequest> streamPaymentReturn(StreamObserver<PaymentReturnResponse> responseObserver) {
         logger.info("Stream for payment return initiated.");
 
-        // This will handle a stream of requests from the client and send responses back
         return new StreamObserver<PaymentReturnRequest>() {
 
             @Override
@@ -45,18 +48,20 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
                 logger.info("Received payment return request for paymentId: {}, refund amount: {}",
                         request.getPaymentId(), request.getRefundSum());
 
-                // Logic to process the payment return request, e.g., validate the payment ID, refund amount
-                boolean refundSuccess = processRefund(request);  // You would call some logic to process the refund
+                boolean refundSuccess = processRefund(request);
+
+                if (!refundSuccess) {
+                    throw new PaymentException("Refund failed");
+                }
 
                 // Build the response for each payment return
                 PaymentReturnResponse response = PaymentReturnResponse.newBuilder()
                         .setPaymentId(String.valueOf(request.getPaymentId()))
                         .setTimestamp(request.getTimestamp())
-                        .setMessage(refundSuccess ? "Refund initiated successfully." : "Refund failed.")
-                        .setSuccess(refundSuccess)
+                        .setMessage("Refund initiated successfully.")
+                        .setSuccess(true)
                         .build();
 
-                // Send the response back to the client
                 logger.info("Sending refund response for paymentId: {}, success: {}", request.getPaymentId(), refundSuccess);
                 responseObserver.onNext(response);
             }
@@ -64,14 +69,12 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
             @Override
             public void onError(Throwable t) {
                 logger.error("Error in payment return stream: ", t);
-                // Handle error if something goes wrong in the stream
                 responseObserver.onError(t);
             }
 
             @Override
             public void onCompleted() {
                 logger.info("Payment return stream completed.");
-                // Once the client has finished sending requests, complete the response
                 responseObserver.onCompleted();
             }
         };
@@ -80,14 +83,12 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
     // Simulated payment processing logic (you would replace this with real logic)
     private boolean processPaymentLogic(PaymentRequest request) {
         logger.info("Processing payment for userId: {} and eventId: {}", request.getUserId(), request.getEventId());
-        // In a real scenario, you'd process the payment here (e.g., call to a payment gateway)
-        return true; // Simulate success
+        return true;
     }
 
     // Simulated refund processing logic (you would replace this with real logic)
     private boolean processRefund(PaymentReturnRequest request) {
         logger.info("Processing refund for paymentId: {}, refund amount: {}", request.getPaymentId(), request.getRefundSum());
-        // In a real scenario, you'd process the refund here (e.g., refund via payment gateway)
-        return true; // Simulate success
+        return true;
     }
 }
