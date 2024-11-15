@@ -5,6 +5,9 @@ import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.annotation.Secured;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 @GrpcService
 public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBase {
@@ -13,6 +16,7 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
 
     // Unary RPC method to process a payment
     @Override
+    @Secured("ROLE_AUTHORIZED")
     public void processPayment(PaymentRequest request, StreamObserver<PaymentResponse> responseObserver) {
         logger.info("Processing payment for userId: {}, eventId: {}, amount: {}",
                 request.getUserId(), request.getEventId(), request.getPrice());
@@ -24,13 +28,11 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
             throw new PaymentException("Payment failed");
         }
 
-        // Build the response
         PaymentResponse response = PaymentResponse.newBuilder()
                 .setSuccess(true)
                 .setMessage("Payment successful!")
                 .build();
 
-        // Send the response
         responseObserver.onNext(response);
         logger.info("Payment response sent for userId: {}, success: {}", request.getUserId(), paymentSuccess);
         responseObserver.onCompleted();
@@ -38,6 +40,7 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
 
 
     @Override
+    @Secured("ROLE_AUTHORIZED")
     public StreamObserver<PaymentReturnRequest> streamPaymentReturn(StreamObserver<PaymentReturnResponse> responseObserver) {
         logger.info("Stream for payment return initiated.");
 
@@ -80,13 +83,11 @@ public class PaymentServiceImpl extends PaymentServiceGrpc.PaymentServiceImplBas
         };
     }
 
-    // Simulated payment processing logic (you would replace this with real logic)
     private boolean processPaymentLogic(PaymentRequest request) {
         logger.info("Processing payment for userId: {} and eventId: {}", request.getUserId(), request.getEventId());
-        return true;
+        return ThreadLocalRandom.current().nextBoolean();
     }
 
-    // Simulated refund processing logic (you would replace this with real logic)
     private boolean processRefund(PaymentReturnRequest request) {
         logger.info("Processing refund for paymentId: {}, refund amount: {}", request.getPaymentId(), request.getRefundSum());
         return true;
