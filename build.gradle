@@ -68,6 +68,14 @@ sourceSets {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src/generated/main/java", "src/generated/main/grpc", "src/main/java"]
+        }
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
